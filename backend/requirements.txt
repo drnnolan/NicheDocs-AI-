@@ -1,0 +1,17 @@
+# Runtime dependencies. Keep this list minimal: everything here ships inside
+# the Vercel Function bundle.
+#
+# The four pinned exactly are the ones whose APIs this codebase depends on.
+fastapi==0.141.1
+openai==3.8.0
+supabase==2.31.0
+pypdf==6.17.0
+
+# Pulled in transitively, listed for clarity. pydantic ships with fastapi;
+# python-multipart is what lets FastAPI parse the multipart body on POST /upload.
+pydantic>=2.9,<3
+python-multipart>=0.0.9
+
+# ASGI server for local development. Vercel supplies its own runtime and
+# ignores this, but `uvicorn main:app --reload` is the local workflow.
+uvicorn[standard]>=0.30,<1

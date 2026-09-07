@@ -1,0 +1,17 @@
+line-length = 100
+target-version = "py312"
+
+[lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "C4"]
+ignore = [
+    # Long lines inside prompt strings and SQL are more readable unwrapped.
+    "E501",
+]
+
+[lint.per-file-ignores]
+# Tests reach into private helpers on purpose.
+"tests/*" = ["SLF001"]
+# B008 flags function calls in argument defaults. `File(...)` and `Form(...)`
+# in defaults is how FastAPI declares multipart parameters — the rule does not
+# apply to this framework.
+"nichedocs/routes.py" = ["B008"]
