@@ -38,7 +38,7 @@ export function ChatPanel({ document, messages, pending, onAsk }: Props) {
 
   if (!document) {
     return (
-      <section className="flex flex-1 items-center justify-center p-8">
+      <section className="flex flex-1 items-center justify-center rounded-2xl bg-white p-8 shadow-lg shadow-slate-300/40 ring-1 ring-slate-900/5">
         <div className="max-w-md text-center">
           <h2 className="text-lg font-semibold text-slate-800">
             Upload a handbook to begin
@@ -54,7 +54,9 @@ export function ChatPanel({ document, messages, pending, onAsk }: Props) {
   }
 
   return (
-    <section className="flex flex-1 flex-col overflow-hidden">
+    // Matches the sidebar's floating-card treatment so the two panes read as a
+    // pair. overflow-hidden keeps the children clipped to the rounded corners.
+    <section className="flex flex-1 flex-col overflow-hidden rounded-2xl bg-white shadow-lg shadow-slate-300/40 ring-1 ring-slate-900/5">
       <header className="border-b border-slate-200 bg-white px-6 py-3">
         <h2 className="truncate text-sm font-semibold text-slate-800">
           {document.title || document.filename}
@@ -77,7 +79,7 @@ export function ChatPanel({ document, messages, pending, onAsk }: Props) {
                   type="button"
                   onClick={() => submit(question)}
                   disabled={pending}
-                  className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 disabled:opacity-50"
+                  className="rounded-full border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs text-slate-700 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 disabled:opacity-50"
                 >
                   {question}
                 </button>
@@ -130,7 +132,13 @@ export function ChatPanel({ document, messages, pending, onAsk }: Props) {
             Ask
           </button>
         </div>
-        <p className="mt-2 text-[11px] text-slate-400">
+        {/*
+          slate-600 at 12px, not slate-400 at 11px: the lighter grey fell below
+          the WCAG AA contrast minimum on white, which made the grounding
+          promise — the most important claim the app makes — the hardest line
+          on the page to read.
+        */}
+        <p className="mt-2 text-xs text-slate-600">
           Answers come only from this document. Enter to send, Shift+Enter for a new line.
         </p>
       </form>

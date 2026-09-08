@@ -37,7 +37,7 @@ export function DocumentList({
 
   if (documents.length === 0) {
     return (
-      <p className="rounded-lg border border-slate-200 bg-white px-3 py-4 text-center text-xs text-slate-500">
+      <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-4 text-center text-xs text-slate-500">
         No handbooks yet. Upload one to get started.
       </p>
     );
@@ -56,7 +56,7 @@ export function DocumentList({
                 "group flex items-start gap-2 rounded-lg border px-3 py-2.5 transition-colors",
                 selected
                   ? "border-indigo-300 bg-indigo-50"
-                  : "border-slate-200 bg-white hover:border-slate-300",
+                  : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-slate-100/70",
               ].join(" ")}
             >
               <button

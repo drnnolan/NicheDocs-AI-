@@ -76,7 +76,9 @@ export function UploadPanel({ onUploaded, disabled = false }: Props) {
           "rounded-xl border-2 border-dashed p-5 text-center transition-colors",
           dragging
             ? "border-indigo-400 bg-indigo-50"
-            : "border-slate-300 bg-white hover:border-slate-400",
+            // slate-50, not white: the sidebar card behind this is already
+            // white, so a white dropzone would vanish into it.
+            : "border-slate-300 bg-slate-50 hover:border-slate-400 hover:bg-slate-100/70",
           busy || disabled ? "opacity-70" : "",
         ].join(" ")}
       >

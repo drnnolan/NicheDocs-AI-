@@ -16,6 +16,20 @@ body {
   height: 100%;
 }
 
+/*
+  Global type scale. Tailwind's text-* sizes are expressed in rem, so nudging
+  the root font size scales every label, heading, and body copy in the app
+  proportionally — one lever instead of editing hundreds of utility classes.
+  Browser default is 16px; 17.6px is a ~10% lift.
+
+  Deliberately a percentage rather than a px value: it stays relative to the
+  reader's own browser font-size setting, so anyone who has increased their
+  default for accessibility keeps that increase on top of ours.
+*/
+html {
+  font-size: 110%;
+}
+
 body {
   @apply bg-slate-50 text-slate-900 antialiased;
 }

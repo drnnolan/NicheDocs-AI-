@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChatPanel } from "@/components/ChatPanel";
 import { DocumentList } from "@/components/DocumentList";
 import { UploadPanel } from "@/components/UploadPanel";
+import { ExternalLinkIcon, GitHubIcon } from "@/components/icons";
 import { ApiError, ask, deleteDocument, listDocuments } from "@/lib/api";
 import type { ChatMessage, DocumentSummary, ProcessResponse } from "@/lib/types";
 
@@ -156,17 +157,26 @@ export default function Home() {
           </p>
         </div>
         <a
-          href="https://github.com/"
+          href="https://github.com/drnnolan/NicheDocs-AI-"
           target="_blank"
-          rel="noreferrer"
-          className="rounded-lg border border-sky-300 bg-white/60 px-3 py-1.5 text-xs font-medium text-sky-900 transition hover:border-sky-400 hover:bg-white"
+          // noopener closes the reverse-tabnabbing hole that target="_blank" opens.
+          rel="noopener noreferrer"
+          aria-label="View the NicheDocs AI source on GitHub (opens in a new tab)"
+          className="group inline-flex items-center gap-2 rounded-lg border border-sky-300 bg-white/70 px-3 py-1.5 text-xs font-semibold text-sky-900 shadow-sm transition hover:border-sky-400 hover:bg-white hover:text-sky-950 hover:shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-1 focus-visible:ring-offset-sky-100"
         >
-          GitHub
+          <GitHubIcon className="h-4 w-4" />
+          <span>View source</span>
+          <ExternalLinkIcon className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-70" />
         </a>
       </header>
 
-      <div className="flex min-h-0 flex-1">
-        <aside className="scroll-thin flex w-80 shrink-0 flex-col gap-4 overflow-y-auto border-r border-slate-200 bg-slate-100/60 p-4">
+      <div className="flex min-h-0 flex-1 gap-4 p-4">
+        {/*
+          Floating card rather than a flush panel: inset from the page edges,
+          rounded, and lifted with a soft shadow. The shadow replaces the old
+          right-hand border — using both reads as a double edge.
+        */}
+        <aside className="scroll-thin flex w-80 shrink-0 flex-col gap-4 overflow-y-auto rounded-2xl bg-white p-4 shadow-lg shadow-slate-300/40 ring-1 ring-slate-900/5">
           <UploadPanel onUploaded={handleUploaded} />
 
           <div>

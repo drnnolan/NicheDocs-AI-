@@ -15,6 +15,7 @@ from .chunking import Chunk
 from .clients import get_supabase
 from .config import get_settings
 from .errors import NotFound, UpstreamError
+from .retry import with_retry
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +61,10 @@ def create_document(*, filename: str, title: str | None, byte_size: int) -> dict
         "status": "pending",
     }
     try:
-        response = get_supabase().table("documents").insert(payload).execute()
+        response = with_retry(
+            lambda: get_supabase().table("documents").insert(payload).execute(),
+            description="create document",
+        )
     except Exception as exc:  # noqa: BLE001 - supabase-py raises varied types
         logger.exception("Failed to insert document row")
         raise UpstreamError(f"Could not create the document record: {exc}") from exc
@@ -72,13 +76,14 @@ def create_document(*, filename: str, title: str | None, byte_size: int) -> dict
 
 def get_document(document_id: str) -> dict[str, Any]:
     try:
-        response = (
-            get_supabase()
+        response = with_retry(
+            lambda: get_supabase()
             .table("documents")
             .select("*")
             .eq("id", document_id)
             .limit(1)
-            .execute()
+            .execute(),
+            description="get document",
         )
     except Exception as exc:  # noqa: BLE001
         logger.exception("Failed to fetch document %s", document_id)
@@ -91,13 +96,14 @@ def get_document(document_id: str) -> dict[str, Any]:
 
 def list_documents(limit: int = 50) -> list[dict[str, Any]]:
     try:
-        response = (
-            get_supabase()
+        response = with_retry(
+            lambda: get_supabase()
             .table("documents")
             .select(DOCUMENT_FIELDS)
             .order("uploaded_at", desc=True)
             .limit(limit)
-            .execute()
+            .execute(),
+            description="list documents",
         )
     except Exception as exc:  # noqa: BLE001
         logger.exception("Failed to list documents")
@@ -107,12 +113,13 @@ def list_documents(limit: int = 50) -> list[dict[str, Any]]:
 
 def update_document(document_id: str, **fields: Any) -> dict[str, Any]:
     try:
-        response = (
-            get_supabase()
+        response = with_retry(
+            lambda: get_supabase()
             .table("documents")
             .update(fields)
             .eq("id", document_id)
-            .execute()
+            .execute(),
+            description="update document",
         )
     except Exception as exc:  # noqa: BLE001
         logger.exception("Failed to update document %s", document_id)
@@ -155,14 +162,24 @@ def delete_document(document_id: str) -> None:
         # Best-effort: a missing object must not block deleting the record,
         # otherwise a failed upload leaves a row the user cannot get rid of.
         try:
-            get_supabase().storage.from_(
-                get_settings().storage_bucket
-            ).remove([storage_path])
+            with_retry(
+                lambda: get_supabase()
+                .storage.from_(get_settings().storage_bucket)
+                .remove([storage_path]),
+                description="remove stored PDF",
+            )
         except Exception:  # noqa: BLE001
             logger.warning("Could not remove %s from storage", storage_path, exc_info=True)
 
     try:
-        get_supabase().table("documents").delete().eq("id", document_id).execute()
+        with_retry(
+            lambda: get_supabase()
+            .table("documents")
+            .delete()
+            .eq("id", document_id)
+            .execute(),
+            description="delete document",
+        )
     except Exception as exc:  # noqa: BLE001
         logger.exception("Failed to delete document %s", document_id)
         raise UpstreamError(f"Could not delete the document: {exc}") from exc
@@ -186,7 +203,10 @@ def replace_chunks(
 
     client = get_supabase()
     try:
-        client.table("chunks").delete().eq("document_id", document_id).execute()
+        with_retry(
+            lambda: client.table("chunks").delete().eq("document_id", document_id).execute(),
+            description="clear chunks",
+        )
     except Exception as exc:  # noqa: BLE001
         logger.exception("Failed to clear chunks for %s", document_id)
         raise UpstreamError(f"Could not clear previous chunks: {exc}") from exc
@@ -207,7 +227,13 @@ def replace_chunks(
     for start in range(0, len(rows), _CHUNK_INSERT_BATCH):
         batch = rows[start : start + _CHUNK_INSERT_BATCH]
         try:
-            client.table("chunks").insert(batch).execute()
+            # `rows=batch` binds the loop variable at definition time. The
+            # lambda runs immediately so late binding would be harmless here,
+            # but relying on that is the kind of subtlety that breaks later.
+            with_retry(
+                lambda rows=batch: client.table("chunks").insert(rows).execute(),
+                description="insert chunk batch",
+            )
         except Exception as exc:  # noqa: BLE001
             logger.exception("Failed to insert chunk batch at %d", start)
             raise UpstreamError(f"Could not store document chunks: {exc}") from exc
@@ -220,15 +246,20 @@ def match_chunks(
 ) -> list[dict[str, Any]]:
     """Vector similarity search, scoped to one document."""
     try:
-        response = get_supabase().rpc(
-            "match_chunks",
-            {
-                "query_embedding": query_embedding,
-                "p_document_id": document_id,
-                "match_count": match_count,
-                "match_threshold": min_similarity,
-            },
-        ).execute()
+        response = with_retry(
+            lambda: get_supabase()
+            .rpc(
+                "match_chunks",
+                {
+                    "query_embedding": query_embedding,
+                    "p_document_id": document_id,
+                    "match_count": match_count,
+                    "match_threshold": min_similarity,
+                },
+            )
+            .execute(),
+            description="similarity search",
+        )
     except Exception as exc:  # noqa: BLE001
         logger.exception("Vector search failed for document %s", document_id)
         raise UpstreamError(f"Similarity search failed: {exc}") from exc
@@ -248,10 +279,11 @@ def create_signed_upload_url(storage_path: str) -> str:
     browser -> Supabase Storage, and only the path comes back to us.
     """
     try:
-        result = (
-            get_supabase()
+        result = with_retry(
+            lambda: get_supabase()
             .storage.from_(get_settings().storage_bucket)
-            .create_signed_upload_url(storage_path)
+            .create_signed_upload_url(storage_path),
+            description="sign upload URL",
         )
     except Exception as exc:  # noqa: BLE001
         logger.exception("Could not sign an upload URL for %s", storage_path)
@@ -266,10 +298,15 @@ def create_signed_upload_url(storage_path: str) -> str:
 def upload_pdf(storage_path: str, data: bytes) -> None:
     """Server-side upload, used by the small-file /upload convenience route."""
     try:
-        get_supabase().storage.from_(get_settings().storage_bucket).upload(
-            storage_path,
-            data,
-            {"content-type": "application/pdf", "upsert": "true"},
+        with_retry(
+            lambda: get_supabase()
+            .storage.from_(get_settings().storage_bucket)
+            .upload(
+                storage_path,
+                data,
+                {"content-type": "application/pdf", "upsert": "true"},
+            ),
+            description="upload PDF",
         )
     except Exception as exc:  # noqa: BLE001
         logger.exception("Could not upload %s", storage_path)
@@ -282,8 +319,11 @@ def download_pdf(storage_path: str) -> bytes:
     Outbound, so the 4.5 MB body limit does not apply here.
     """
     try:
-        return get_supabase().storage.from_(get_settings().storage_bucket).download(
-            storage_path
+        return with_retry(
+            lambda: get_supabase()
+            .storage.from_(get_settings().storage_bucket)
+            .download(storage_path),
+            description="download PDF",
         )
     except Exception as exc:  # noqa: BLE001
         logger.exception("Could not download %s", storage_path)
