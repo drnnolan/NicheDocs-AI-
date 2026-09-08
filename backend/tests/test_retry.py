@@ -89,6 +89,84 @@ def test_does_not_retry_unrelated_errors():
     assert len(attempts) == 1, "a non-transient error must not be retried"
 
 
+def test_retries_and_recovers_from_a_stale_connection():
+    attempts = []
+
+    def operation():
+        attempts.append(1)
+        if len(attempts) < 2:
+            raise RuntimeError("Server disconnected")
+        return "reconnected"
+
+    assert with_retry(operation) == "reconnected"
+    assert len(attempts) == 2
+
+
+def test_rebuilds_the_client_after_a_stale_connection():
+    """Retrying without discarding the dead pool would reuse the same socket."""
+    from nichedocs import clients
+
+    resets = []
+    original = clients.get_supabase.cache_clear
+    clients.get_supabase.cache_clear = lambda: resets.append(1)
+    try:
+        attempts = []
+
+        def operation():
+            attempts.append(1)
+            if len(attempts) < 2:
+                raise RuntimeError("Server disconnected")
+            return "ok"
+
+        assert with_retry(operation) == "ok"
+    finally:
+        clients.get_supabase.cache_clear = original
+
+    assert resets == [1], "the cached Supabase client must be rebuilt exactly once"
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        "Server disconnected",
+        "Connection reset by peer",
+        "Connection aborted",
+        "RemoteDisconnected: Remote end closed connection",
+        "peer closed connection without sending complete message body",
+        # Raised when the pooled httpx client itself is closed, not just the
+        # socket. Found by forcibly closing a live client's session.
+        "Cannot send a request, as the client has been closed.",
+    ],
+)
+def test_recognises_disconnect_phrasings(message):
+    attempts = []
+
+    def operation():
+        attempts.append(1)
+        if len(attempts) < 2:
+            raise RuntimeError(message)
+        return "ok"
+
+    assert with_retry(operation) == "ok"
+
+
+def test_recognises_httpx_typed_errors_with_empty_messages():
+    """httpx raises RemoteProtocolError whose str() is often blank."""
+
+    class RemoteProtocolError(Exception):
+        pass
+
+    attempts = []
+
+    def operation():
+        attempts.append(1)
+        if len(attempts) < 2:
+            raise RemoteProtocolError()
+        return "ok"
+
+    assert with_retry(operation) == "ok"
+
+
 def test_does_not_retry_an_authorisation_failure():
     attempts = []
 

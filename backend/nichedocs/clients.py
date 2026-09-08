@@ -21,6 +21,18 @@ def get_supabase() -> Client:
     return create_client(settings.supabase_url, settings.supabase_service_key)
 
 
+def reset_supabase() -> None:
+    """Drop the cached Supabase client so the next call builds a fresh one.
+
+    Needed because the client holds a pooled keep-alive connection. When the
+    process sits idle, Supabase closes its end, but our socket does not learn
+    about it until we try to write — which surfaces as "Server disconnected".
+    Rebuilding the client discards the dead pool; retrying without this would
+    just reuse the same broken socket.
+    """
+    get_supabase.cache_clear()
+
+
 @lru_cache(maxsize=1)
 def get_openai() -> OpenAI:
     settings = get_settings()

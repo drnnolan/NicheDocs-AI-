@@ -25,15 +25,49 @@ logger = logging.getLogger(__name__)
 TRANSIENT_CODES = ("PGRST303",)
 TRANSIENT_MARKERS = ("jwt issued at future", "issued at future")
 
+# Dropped-connection failures. The cached Supabase client keeps a pooled
+# keep-alive socket; Supabase closes its end while the process is idle, and we
+# only find out when the next write fails. Retrying alone is not enough — the
+# stale client has to be rebuilt first, which is what `reset` below does.
+STALE_CONNECTION_MARKERS = (
+    "server disconnected",
+    "connection reset",
+    "connection aborted",
+    "remotedisconnected",
+    "connection broken",
+    "peer closed connection",
+    "connectionterminated",
+    # httpx raises this when the pooled client itself has been closed, rather
+    # than just the socket. Same cause, same cure: rebuild the client.
+    "client has been closed",
+    "event loop is closed",
+)
+
 MAX_ATTEMPTS = 3
 BACKOFF_SECONDS = 1.5
+# Reconnecting is fast and deterministic, unlike waiting out clock skew.
+RECONNECT_BACKOFF_SECONDS = 0.4
 
 
-def _is_transient(exc: Exception) -> bool:
+def _is_stale_connection(exc: Exception) -> bool:
+    text = str(exc).lower()
+    if any(marker in text for marker in STALE_CONNECTION_MARKERS):
+        return True
+    # httpx/httpcore surface these as typed errors whose str() is often empty,
+    # so fall back to the exception's class name.
+    name = type(exc).__name__.lower()
+    return name in {"remoteprotocolerror", "connecterror", "readerror", "writeerror"}
+
+
+def _is_clock_skew(exc: Exception) -> bool:
     text = str(exc).lower()
     if any(code.lower() in text for code in TRANSIENT_CODES):
         return True
     return any(marker in text for marker in TRANSIENT_MARKERS)
+
+
+def _is_transient(exc: Exception) -> bool:
+    return _is_clock_skew(exc) or _is_stale_connection(exc)
 
 
 def with_retry[T](operation: Callable[[], T], *, description: str = "request") -> T:
@@ -50,7 +84,26 @@ def with_retry[T](operation: Callable[[], T], *, description: str = "request") -
             if not _is_transient(exc):
                 raise
             last = exc
-            if attempt < MAX_ATTEMPTS:
+            if attempt >= MAX_ATTEMPTS:
+                break
+
+            if _is_stale_connection(exc):
+                # Imported here, not at module scope: clients.py has no reason
+                # to know about retries, and a top-level import would make the
+                # two modules circular.
+                from .clients import reset_supabase
+
+                logger.warning(
+                    "Stale connection on %s (attempt %d/%d); rebuilding the Supabase "
+                    "client and retrying in %.1fs.",
+                    description,
+                    attempt,
+                    MAX_ATTEMPTS,
+                    RECONNECT_BACKOFF_SECONDS,
+                )
+                reset_supabase()
+                time.sleep(RECONNECT_BACKOFF_SECONDS)
+            else:
                 logger.warning(
                     "Transient clock-skew error on %s (attempt %d/%d); retrying in %.1fs. "
                     "This usually means the system clock differs from Supabase's.",

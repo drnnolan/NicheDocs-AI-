@@ -7,8 +7,167 @@
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 
+/*
+  Semantic colour tokens.
+
+  Components reference roles (`bg-surface`, `text-muted`) rather than literal
+  palette steps (`bg-white`, `text-slate-400`). That means the light and dark
+  themes are defined once, here, instead of every component carrying a `dark:`
+  variant beside each of its ~117 colour utilities.
+
+  Three theme states are supported:
+    - no attribute      -> follow the OS via prefers-color-scheme
+    - data-theme=light  -> forced light, even on a dark OS
+    - data-theme=dark   -> forced dark, even on a light OS
+*/
+@theme inline {
+  --color-canvas: var(--nd-canvas);
+  --color-surface: var(--nd-surface);
+  --color-surface-sunken: var(--nd-surface-sunken);
+  --color-line: var(--nd-line);
+  --color-line-strong: var(--nd-line-strong);
+  --color-content: var(--nd-content);
+  --color-content-soft: var(--nd-content-soft);
+  --color-muted: var(--nd-muted);
+  --color-header: var(--nd-header);
+  --color-header-line: var(--nd-header-line);
+  --color-header-title: var(--nd-header-title);
+  --color-header-sub: var(--nd-header-sub);
+  --color-accent: var(--nd-accent);
+  --color-accent-hover: var(--nd-accent-hover);
+  --color-accent-soft: var(--nd-accent-soft);
+  --color-accent-line: var(--nd-accent-line);
+  --color-accent-text: var(--nd-accent-text);
+  --color-on-accent: var(--nd-on-accent);
+  --color-warn-soft: var(--nd-warn-soft);
+  --color-warn-line: var(--nd-warn-line);
+  --color-warn-text: var(--nd-warn-text);
+  --color-danger-soft: var(--nd-danger-soft);
+  --color-danger-text: var(--nd-danger-text);
+  --color-ok-soft: var(--nd-ok-soft);
+  --color-ok-text: var(--nd-ok-text);
+  --color-scroll-thumb: var(--nd-scroll-thumb);
+}
+
+/* --- Light (the default) -------------------------------------------------- */
 :root {
   color-scheme: light;
+
+  --nd-canvas: var(--color-slate-50);
+  --nd-surface: #ffffff;
+  --nd-surface-sunken: var(--color-slate-50);
+  --nd-line: var(--color-slate-200);
+  --nd-line-strong: var(--color-slate-300);
+  --nd-content: var(--color-slate-900);
+  --nd-content-soft: var(--color-slate-700);
+  --nd-muted: var(--color-slate-600);
+
+  --nd-header: var(--color-sky-100);
+  --nd-header-line: var(--color-sky-200);
+  --nd-header-title: var(--color-sky-950);
+  --nd-header-sub: var(--color-sky-800);
+
+  --nd-accent: var(--color-indigo-600);
+  --nd-accent-hover: var(--color-indigo-700);
+  --nd-accent-soft: var(--color-indigo-50);
+  --nd-accent-line: var(--color-indigo-200);
+  --nd-accent-text: var(--color-indigo-700);
+  --nd-on-accent: #ffffff;
+
+  --nd-warn-soft: var(--color-amber-50);
+  --nd-warn-line: var(--color-amber-200);
+  --nd-warn-text: var(--color-amber-700);
+
+  --nd-danger-soft: var(--color-rose-50);
+  --nd-danger-text: var(--color-rose-700);
+
+  --nd-ok-soft: var(--color-emerald-100);
+  --nd-ok-text: var(--color-emerald-700);
+
+  --nd-scroll-thumb: var(--color-slate-300);
+}
+
+/*
+  Dark. Surfaces are lifted slate rather than pure black: the app is a stack of
+  floating cards, and #000 leaves the shadows with nothing to read against.
+  Accent and status colours shift to lighter steps because saturated mid-tones
+  lose contrast badly on dark ground.
+*/
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --nd-canvas: var(--color-slate-950);
+    --nd-surface: var(--color-slate-900);
+    --nd-surface-sunken: var(--color-slate-800);
+    --nd-line: var(--color-slate-700);
+    --nd-line-strong: var(--color-slate-600);
+    --nd-content: var(--color-slate-100);
+    --nd-content-soft: var(--color-slate-300);
+    --nd-muted: var(--color-slate-400);
+
+    --nd-header: var(--color-sky-950);
+    --nd-header-line: var(--color-sky-900);
+    --nd-header-title: var(--color-sky-100);
+    --nd-header-sub: var(--color-sky-300);
+
+    --nd-accent: var(--color-indigo-500);
+    --nd-accent-hover: var(--color-indigo-400);
+    --nd-accent-soft: color-mix(in oklab, var(--color-indigo-500) 18%, transparent);
+    --nd-accent-line: var(--color-indigo-700);
+    --nd-accent-text: var(--color-indigo-300);
+    --nd-on-accent: #ffffff;
+
+    --nd-warn-soft: color-mix(in oklab, var(--color-amber-500) 16%, transparent);
+    --nd-warn-line: var(--color-amber-800);
+    --nd-warn-text: var(--color-amber-300);
+
+    --nd-danger-soft: color-mix(in oklab, var(--color-rose-500) 16%, transparent);
+    --nd-danger-text: var(--color-rose-300);
+
+    --nd-ok-soft: color-mix(in oklab, var(--color-emerald-500) 20%, transparent);
+    --nd-ok-text: var(--color-emerald-300);
+
+    --nd-scroll-thumb: var(--color-slate-600);
+  }
+}
+
+/* Explicit choice wins over the OS preference, in both directions. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --nd-canvas: var(--color-slate-950);
+  --nd-surface: var(--color-slate-900);
+  --nd-surface-sunken: var(--color-slate-800);
+  --nd-line: var(--color-slate-700);
+  --nd-line-strong: var(--color-slate-600);
+  --nd-content: var(--color-slate-100);
+  --nd-content-soft: var(--color-slate-300);
+  --nd-muted: var(--color-slate-400);
+
+  --nd-header: var(--color-sky-950);
+  --nd-header-line: var(--color-sky-900);
+  --nd-header-title: var(--color-sky-100);
+  --nd-header-sub: var(--color-sky-300);
+
+  --nd-accent: var(--color-indigo-500);
+  --nd-accent-hover: var(--color-indigo-400);
+  --nd-accent-soft: color-mix(in oklab, var(--color-indigo-500) 18%, transparent);
+  --nd-accent-line: var(--color-indigo-700);
+  --nd-accent-text: var(--color-indigo-300);
+  --nd-on-accent: #ffffff;
+
+  --nd-warn-soft: color-mix(in oklab, var(--color-amber-500) 16%, transparent);
+  --nd-warn-line: var(--color-amber-800);
+  --nd-warn-text: var(--color-amber-300);
+
+  --nd-danger-soft: color-mix(in oklab, var(--color-rose-500) 16%, transparent);
+  --nd-danger-text: var(--color-rose-300);
+
+  --nd-ok-soft: color-mix(in oklab, var(--color-emerald-500) 20%, transparent);
+  --nd-ok-text: var(--color-emerald-300);
+
+  --nd-scroll-thumb: var(--color-slate-600);
 }
 
 html,
@@ -31,14 +190,15 @@ html {
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  @apply bg-canvas text-content antialiased;
+  /* Theme swaps shouldn't flash; a short fade reads as intentional. */
+  transition: background-color 150ms ease, color 150ms ease;
 }
 
 /* Slim scrollbars so the chat and sidebar don't get chunky native ones. */
 .scroll-thin {
   scrollbar-width: thin;
-  /* Tailwind v4 exposes theme values as real CSS variables. */
-  scrollbar-color: var(--color-slate-300) transparent;
+  scrollbar-color: var(--nd-scroll-thumb) transparent;
 }
 
 .scroll-thin::-webkit-scrollbar {
@@ -47,7 +207,8 @@ body {
 }
 
 .scroll-thin::-webkit-scrollbar-thumb {
-  @apply rounded-full bg-slate-300;
+  border-radius: 9999px;
+  background-color: var(--nd-scroll-thumb);
 }
 
 .scroll-thin::-webkit-scrollbar-track {

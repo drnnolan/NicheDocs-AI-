@@ -38,12 +38,12 @@ export function ChatPanel({ document, messages, pending, onAsk }: Props) {
 
   if (!document) {
     return (
-      <section className="flex flex-1 items-center justify-center rounded-2xl bg-white p-8 shadow-lg shadow-slate-300/40 ring-1 ring-slate-900/5">
+      <section className="flex flex-1 items-center justify-center rounded-2xl bg-surface p-8 shadow-lg shadow-black/10 ring-1 ring-line">
         <div className="max-w-md text-center">
-          <h2 className="text-lg font-semibold text-slate-800">
+          <h2 className="text-lg font-semibold text-content">
             Upload a handbook to begin
           </h2>
-          <p className="mt-2 text-sm leading-relaxed text-slate-600">
+          <p className="mt-2 text-sm leading-relaxed text-muted">
             HandbookIQ answers questions using only the document you upload, and
             shows the page each answer came from. When the handbook does not
             cover something, it says so instead of guessing.
@@ -56,12 +56,12 @@ export function ChatPanel({ document, messages, pending, onAsk }: Props) {
   return (
     // Matches the sidebar's floating-card treatment so the two panes read as a
     // pair. overflow-hidden keeps the children clipped to the rounded corners.
-    <section className="flex flex-1 flex-col overflow-hidden rounded-2xl bg-white shadow-lg shadow-slate-300/40 ring-1 ring-slate-900/5">
-      <header className="border-b border-slate-200 bg-white px-6 py-3">
-        <h2 className="truncate text-sm font-semibold text-slate-800">
+    <section className="flex flex-1 flex-col overflow-hidden rounded-2xl bg-surface shadow-lg shadow-black/10 ring-1 ring-line">
+      <header className="border-b border-line bg-surface px-6 py-3">
+        <h2 className="truncate text-sm font-semibold text-content">
           {document.title || document.filename}
         </h2>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-muted">
           {document.page_count} pages indexed · answers cite this document only
         </p>
       </header>
@@ -69,7 +69,7 @@ export function ChatPanel({ document, messages, pending, onAsk }: Props) {
       <div className="scroll-thin flex-1 space-y-4 overflow-y-auto px-6 py-5">
         {messages.length === 0 && (
           <div className="mx-auto max-w-lg pt-6 text-center">
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-muted">
               Ask anything about this handbook.
             </p>
             <div className="mt-4 flex flex-wrap justify-center gap-2">
@@ -79,7 +79,7 @@ export function ChatPanel({ document, messages, pending, onAsk }: Props) {
                   type="button"
                   onClick={() => submit(question)}
                   disabled={pending}
-                  className="rounded-full border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs text-slate-700 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 disabled:opacity-50"
+                  className="rounded-full border border-line-strong bg-surface-sunken px-3 py-1.5 text-xs text-content-soft transition hover:border-accent-line hover:bg-accent-soft hover:text-accent-text disabled:opacity-50"
                 >
                   {question}
                 </button>
@@ -101,7 +101,7 @@ export function ChatPanel({ document, messages, pending, onAsk }: Props) {
           event.preventDefault();
           submit(draft);
         }}
-        className="border-t border-slate-200 bg-white px-6 py-4"
+        className="border-t border-line bg-surface px-6 py-4"
       >
         <div className="flex items-end gap-2">
           <label htmlFor="question" className="sr-only">
@@ -121,12 +121,12 @@ export function ChatPanel({ document, messages, pending, onAsk }: Props) {
             rows={1}
             placeholder="Ask about attendance, grading, conduct…"
             disabled={pending || !ready}
-            className="max-h-40 min-h-[44px] flex-1 resize-y rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 disabled:bg-slate-100"
+            className="max-h-40 min-h-[44px] flex-1 resize-y rounded-xl border border-line-strong px-3.5 py-2.5 text-sm text-content placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft disabled:bg-surface-sunken"
           />
           <button
             type="submit"
             disabled={pending || !ready || !draft.trim()}
-            className="flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-indigo-600 px-4 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+            className="flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-accent px-4 text-sm font-semibold text-on-accent transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:bg-surface-sunken"
           >
             <SendIcon />
             Ask
@@ -138,7 +138,7 @@ export function ChatPanel({ document, messages, pending, onAsk }: Props) {
           promise — the most important claim the app makes — the hardest line
           on the page to read.
         */}
-        <p className="mt-2 text-xs text-slate-600">
+        <p className="mt-2 text-xs text-muted">
           Answers come only from this document. Enter to send, Shift+Enter for a new line.
         </p>
       </form>

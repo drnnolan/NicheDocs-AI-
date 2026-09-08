@@ -75,36 +75,36 @@ export function UploadPanel({ onUploaded, disabled = false }: Props) {
         className={[
           "rounded-xl border-2 border-dashed p-5 text-center transition-colors",
           dragging
-            ? "border-indigo-400 bg-indigo-50"
+            ? "border-accent bg-accent-soft"
             // slate-50, not white: the sidebar card behind this is already
             // white, so a white dropzone would vanish into it.
-            : "border-slate-300 bg-slate-50 hover:border-slate-400 hover:bg-slate-100/70",
+            : "border-line-strong bg-surface-sunken hover:border-line-strong hover:bg-surface-sunken",
           busy || disabled ? "opacity-70" : "",
         ].join(" ")}
       >
-        <UploadIcon className="mx-auto h-6 w-6 text-slate-400" />
+        <UploadIcon className="mx-auto h-6 w-6 text-muted" />
 
         {busy ? (
-          <p className="mt-2 text-sm font-medium text-slate-700" role="status" aria-live="polite">
+          <p className="mt-2 text-sm font-medium text-content-soft" role="status" aria-live="polite">
             {STAGE_LABEL[stage] ?? "Working…"}
           </p>
         ) : (
           <>
-            <p className="mt-2 text-sm font-medium text-slate-700">
+            <p className="mt-2 text-sm font-medium text-content-soft">
               Drop a handbook PDF here
             </p>
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
               disabled={disabled}
-              className="mt-1 text-sm font-semibold text-indigo-600 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:text-slate-400"
+              className="mt-1 text-sm font-semibold text-accent-text underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:text-muted"
             >
               or choose a file
             </button>
           </>
         )}
 
-        <p className="mt-2 text-xs text-slate-500">PDF with selectable text, up to 20 MB</p>
+        <p className="mt-2 text-xs text-muted">PDF with selectable text, up to 20 MB</p>
 
         <input
           ref={inputRef}
@@ -119,13 +119,13 @@ export function UploadPanel({ onUploaded, disabled = false }: Props) {
       </div>
 
       {busy && (
-        <div className="mt-2 h-1 overflow-hidden rounded-full bg-slate-200">
-          <div className="h-full w-1/3 animate-pulse rounded-full bg-indigo-500" />
+        <div className="mt-2 h-1 overflow-hidden rounded-full bg-surface-sunken">
+          <div className="h-full w-1/3 animate-pulse rounded-full bg-accent" />
         </div>
       )}
 
       {error && (
-        <p className="mt-2 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700" role="alert">
+        <p className="mt-2 rounded-lg bg-danger-soft px-3 py-2 text-xs text-danger-text" role="alert">
           {error}
         </p>
       )}
