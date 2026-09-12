@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from .pdf import PageText
 
 # --- Heading detection ------------------------------------------------------
-# Handbooks are heavily sectioned, and "Section 4.2 — Attendance" is a far more
+# Policy documents are heavily sectioned, and "Section 4.2 — Attendance" is a far more
 # useful citation than "page 37" alone. These heuristics are intentionally
 # conservative: a missed heading costs nothing (section is nullable), while a
 # false positive mislabels every chunk beneath it.

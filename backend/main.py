@@ -28,7 +28,7 @@ app = FastAPI(
     title="NicheDocs AI",
     version=__version__,
     description=(
-        "Ask questions about a university student handbook and get answers "
+        "Ask questions about a document you upload and get answers "
         "grounded in the document, with page and section citations."
     ),
 )

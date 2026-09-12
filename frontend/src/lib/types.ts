@@ -25,7 +25,7 @@ export interface Source {
 
 export interface AskResponse {
   answer: string;
-  /** False means the handbook does not cover the question. */
+  /** False means the document does not cover the question. */
   found: boolean;
   sources: Source[];
   document_id: string;

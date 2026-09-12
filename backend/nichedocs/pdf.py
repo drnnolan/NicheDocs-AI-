@@ -2,7 +2,7 @@
 
 Deliberately uses `pypdf` (pure Python, no native wheels) rather than
 `pdfplumber`. pdfplumber pulls in Pillow and does per-glyph layout analysis,
-which we do not need for prose handbooks and which inflates the serverless
+which we do not need for prose documents and which inflates the serverless
 bundle. See docs/CASE_STUDY.md for the full trade-off.
 """
 
@@ -26,6 +26,18 @@ _SOFT_HYPHEN = re.compile(r"­")
 # "informa-\ntion" -> "information"
 _HYPHEN_LINEBREAK = re.compile(r"(\w)-\n(\w)")
 
+# Control characters that are never meaningful in extracted prose, stripped
+# before anything downstream sees them.
+#
+# The null byte is not cosmetic: Postgres `text` columns cannot store NUL at
+# all, and an insert carrying one fails with 22P05 "unsupported Unicode escape
+# sequence". Some PDFs — particularly those written with UTF-16 string objects
+# or by certain generators — extract with embedded nulls, which would otherwise
+# reach the database only after we had already paid to embed the whole document.
+#
+# Kept: \n (line structure, which heading detection depends on) and \t.
+_CONTROL_CHARS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+
 
 @dataclass(frozen=True)
 class PageText:
@@ -44,7 +56,10 @@ class ExtractedDocument:
 
 
 def _clean(raw: str) -> str:
-    text = _SOFT_HYPHEN.sub("", raw)
+    # Strip control characters first: everything below assumes plain text, and
+    # a stray NUL would otherwise survive all the way to the database.
+    text = _CONTROL_CHARS.sub("", raw)
+    text = _SOFT_HYPHEN.sub("", text)
     text = _HYPHEN_LINEBREAK.sub(r"\1\2", text)
     text = _HORIZONTAL_WS.sub(" ", text)
     text = _BLANK_LINES.sub("\n\n", text)
@@ -64,7 +79,7 @@ def extract_pages(data: bytes, *, max_pages: int) -> ExtractedDocument:
         raise UnprocessableDocument(f"Could not read this PDF: {exc}") from exc
 
     if reader.is_encrypted:
-        # Many handbooks are "encrypted" only with an empty owner password,
+        # Many documents are "encrypted" only with an empty owner password,
         # which pypdf can open transparently.
         try:
             if reader.decrypt("") == 0:

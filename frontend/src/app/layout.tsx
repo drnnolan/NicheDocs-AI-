@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { InlineScript } from "@/components/InlineScript";
 
 export const metadata: Metadata = {
-  title: "HandbookIQ — NicheDocs AI",
+  title: "NicheDocs AI — Grounded Document Q&A",
   description:
-    "Ask questions about your university student handbook and get answers grounded in the document, with page and section citations.",
+    "Upload a PDF and ask questions about it. Every answer is grounded in the document and cites the page it came from — and says so plainly when the document does not cover your question.",
 };
 
 /*
@@ -15,12 +16,20 @@ export const metadata: Metadata = {
 */
 const THEME_BOOT_SCRIPT = `
 (function () {
+  var t = null;
   try {
-    var t = localStorage.getItem("nichedocs-theme");
-    if (t === "light" || t === "dark") {
-      document.documentElement.setAttribute("data-theme", t);
-    }
+    t = localStorage.getItem("nichedocs-theme");
   } catch (e) {}
+  if (t !== "light" && t !== "dark") {
+    // No stored choice: fall back to the OS preference, so a first-time
+    // visitor on a dark desktop does not get a white page.
+    try {
+      t = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    } catch (e) {
+      t = "light";
+    }
+  }
+  document.documentElement.setAttribute("data-theme", t);
 })();
 `;
 
@@ -30,12 +39,18 @@ export default function RootLayout({
   return (
     // suppressHydrationWarning on <html>: the boot script sets data-theme
     // before React hydrates, so the attribute legitimately differs from SSR.
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" data-theme="light" suppressHydrationWarning>
       <head>
-        <script
-          // The content is a build-time constant, never user input.
-          dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }}
-        />
+        {/*
+          Deliberately an inline script, not next/script: `beforeInteractive` is
+          documented as *not* blocking hydration, so it cannot guarantee the
+          theme lands before first paint — which is the entire job here. An
+          inline script in <head> runs synchronously during HTML parsing.
+
+          InlineScript handles the dev-only "scripts are never executed"
+          warning. The content is a build-time constant, never user input.
+        */}
+        <InlineScript html={THEME_BOOT_SCRIPT} />
       </head>
       {/*
         suppressHydrationWarning: browser extensions (Grammarly, password

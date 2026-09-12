@@ -73,16 +73,16 @@ export function UploadPanel({ onUploaded, disabled = false }: Props) {
           if (file) void handleFile(file);
         }}
         className={[
-          "rounded-xl border-2 border-dashed p-5 text-center transition-colors",
+          "rounded-2xl border-2 border-dashed p-6 text-center transition-colors",
           dragging
             ? "border-accent bg-accent-soft"
-            // slate-50, not white: the sidebar card behind this is already
-            // white, so a white dropzone would vanish into it.
-            : "border-line-strong bg-surface-sunken hover:border-line-strong hover:bg-surface-sunken",
+            : "border-line-strong bg-surface hover:border-accent-line hover:bg-accent-soft/40",
           busy || disabled ? "opacity-70" : "",
         ].join(" ")}
       >
-        <UploadIcon className="mx-auto h-6 w-6 text-muted" />
+        <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-accent-soft text-accent-text">
+          <UploadIcon className="h-5 w-5" />
+        </span>
 
         {busy ? (
           <p className="mt-2 text-sm font-medium text-content-soft" role="status" aria-live="polite">
@@ -90,21 +90,20 @@ export function UploadPanel({ onUploaded, disabled = false }: Props) {
           </p>
         ) : (
           <>
-            <p className="mt-2 text-sm font-medium text-content-soft">
-              Drop a handbook PDF here
-            </p>
+            <p className="mt-3 text-base font-bold text-content">Drop a PDF here</p>
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
               disabled={disabled}
-              className="mt-1 text-sm font-semibold text-accent-text underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:text-muted"
+              className="mt-4 inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-on-accent shadow-sm transition hover:bg-accent-hover hover:shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:cursor-not-allowed disabled:opacity-50"
             >
-              or choose a file
+              <UploadIcon className="h-4 w-4" />
+              Browse files
             </button>
           </>
         )}
 
-        <p className="mt-2 text-xs text-muted">PDF with selectable text, up to 20 MB</p>
+        <p className="mt-1 text-xs text-muted">Selectable text · up to 20MB</p>
 
         <input
           ref={inputRef}

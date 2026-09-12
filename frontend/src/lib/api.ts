@@ -84,7 +84,7 @@ export function ask(documentId: string, question: string): Promise<AskResponse> 
  *
  * The middle step sends the file straight from the browser to Supabase Storage
  * rather than through our API. That is not an optimisation — Vercel Functions
- * reject request bodies over 4.5 MB at the platform edge, so a 20 MB handbook
+ * reject request bodies over 4.5 MB at the platform edge, so a 20 MB document
  * could not reach the backend any other way.
  */
 export async function uploadDocument(

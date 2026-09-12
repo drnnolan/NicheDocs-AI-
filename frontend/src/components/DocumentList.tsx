@@ -29,7 +29,7 @@ export function DocumentList({
     return (
       <ul className="space-y-2" aria-busy="true">
         {[0, 1, 2].map((index) => (
-          <li key={index} className="h-14 animate-pulse rounded-lg bg-surface-sunken" />
+          <li key={index} className="h-16 animate-pulse rounded-xl bg-surface-sunken" />
         ))}
       </ul>
     );
@@ -37,8 +37,8 @@ export function DocumentList({
 
   if (documents.length === 0) {
     return (
-      <p className="rounded-lg border border-line bg-surface-sunken px-3 py-4 text-center text-xs text-muted">
-        No handbooks yet. Upload one to get started.
+      <p className="rounded-xl border border-line bg-surface px-3 py-5 text-center text-xs text-muted">
+        No documents yet. Upload a PDF to get started.
       </p>
     );
   }
@@ -53,10 +53,10 @@ export function DocumentList({
           <li key={doc.id}>
             <div
               className={[
-                "group flex items-start gap-2 rounded-lg border px-3 py-2.5 transition-colors",
+                "group flex items-start gap-2.5 rounded-xl border px-3.5 py-3 transition-colors",
                 selected
-                  ? "border-accent-line bg-accent-soft"
-                  : "border-line bg-surface-sunken hover:border-line-strong hover:bg-accent-soft",
+                  ? "border-accent-line bg-accent-soft ring-1 ring-accent-line"
+                  : "border-line bg-surface hover:border-accent-line hover:bg-accent-soft/40",
               ].join(" ")}
             >
               <button
@@ -77,7 +77,7 @@ export function DocumentList({
                   </span>
                   <span className="mt-1 flex flex-wrap items-center gap-1.5">
                     <span
-                      className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
                         STATUS_STYLES[doc.status]
                       }`}
                     >

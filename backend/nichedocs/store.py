@@ -33,6 +33,19 @@ def _now() -> str:
     return datetime.now(UTC).isoformat()
 
 
+def _pg_safe(value: str | None) -> str | None:
+    """Strip NUL bytes, which Postgres `text` columns cannot store.
+
+    Extraction already removes control characters, so in practice this is a
+    belt-and-braces guard at the database boundary: a single stray NUL fails
+    the whole insert with 22P05 *after* we have paid to embed the document,
+    which is an expensive way to discover a stray byte.
+    """
+    if value is None:
+        return None
+    return value.replace("\x00", "")
+
+
 def build_storage_path(document_id: str, filename: str) -> str:
     """Namespace each upload by document id so filenames can safely collide."""
     safe = "".join(c if c.isalnum() or c in "-_." else "_" for c in filename)[-120:]
@@ -216,8 +229,8 @@ def replace_chunks(
             "document_id": document_id,
             "chunk_index": chunk.chunk_index,
             "page_number": chunk.page_number,
-            "section": chunk.section,
-            "content": chunk.content,
+            "section": _pg_safe(chunk.section),
+            "content": _pg_safe(chunk.content) or "",
             "token_count": chunk.token_count,
             "embedding": embedding,
         }

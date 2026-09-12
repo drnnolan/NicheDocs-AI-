@@ -1,6 +1,6 @@
-# HandbookIQ — Case Study
+# NicheDocs AI — Case Study
 
-**A retrieval-augmented Q&A app over university student handbooks, built so that a wrong answer is structurally harder to produce than an honest "I don't know."**
+**A retrieval-augmented Q&A app over uploaded PDFs, built so that a wrong answer is structurally harder to produce than an honest "I don't know."**
 
 ---
 
@@ -20,13 +20,19 @@ So the product requirement is not "answer as many questions as possible." It is 
 
 ## 2. The approach
 
-### Scope: one document set, not "chat with any PDF"
+### Scope: build narrow, then generalise
 
-Constraining the app to student handbooks was a deliberate early decision. It buys three concrete things a generic tool cannot have:
+I built this against one document type first — university student handbooks — and widened it to any prose PDF only once the grounding behaviour was right. That order was deliberate, and it mattered more than it might sound.
 
-- **A tuned prompt.** The system prompt can state flatly that the model has no other knowledge of the institution — a claim that would be wrong for a general document tool but is exactly right here.
-- **Meaningful structure.** Handbooks are heavily sectioned (`4.2 Attendance Policy`, `Appendix B — Fee Schedule`), so heading detection is worth building and citations get much better: *"page 12, section 4.2"* beats *"page 12."*
-- **Honest evaluation.** "Does this answer the twenty questions a real student asks?" is a test you can actually run. "Does this work on any PDF?" is not.
+Starting narrow bought three things:
+
+- **A falsifiable test.** "Does this correctly answer the twenty questions a real student asks, and correctly refuse the ones the handbook doesn't cover?" is a test you can actually run. "Does this work on any PDF?" is not a test, it's a hope. Every grounding decision below was tuned against the former.
+- **Structure worth exploiting.** Handbooks are heavily sectioned (`4.2 Attendance Policy`, `Appendix B — Fee Schedule`), which made heading detection obviously worth building. That turned out to generalise for free: contracts, policies, and compliance manuals are sectioned the same way, so *"page 12, section 4.2"* beats *"page 12"* across the whole category.
+- **A concrete failure to design against.** "A student misses a withdrawal deadline because the model quoted a typical policy instead of this one" is specific enough to engineer around. "The model might hallucinate" is not.
+
+**What generalising actually cost.** Almost nothing structural — the retrieval pipeline was never domain-aware. The one real change was in the prompt. It used to assert the model had "no other knowledge of this institution," which is a precise, checkable claim. The generic version has to make the same point without naming a domain: treat yourself as having no prior knowledge of this document's subject or field, and disregard what is typical elsewhere. Slightly weaker as a sentence, so I compensated by adding a rule that did not exist before — **mirror the document's own vocabulary**, never substitute a near-synonym for a defined term. Swapping "Member" for "employee" in a contract can change what a clause means, and that risk rises sharply once the input is no longer a single known document type.
+
+The honest read: the narrow version was *better at its one job* than the general version is at any single job. What generalising bought was a tool someone can actually try on their own document — which for a portfolio piece is worth more than the last few points of domain fit.
 
 ### The grounding architecture
 
@@ -62,19 +68,19 @@ The overlap is not decoration. Without it, a sentence split across a chunk bound
 
 ### Direct-to-storage upload instead of proxying through the API
 
-Vercel Functions reject request bodies over 4.5 MB at the platform edge, before any application code runs. A 20 MB handbook cannot reach the backend as a POST body, full stop. The upload therefore became a three-step handshake: the backend mints a Supabase Storage signed URL, the browser PUTs the bytes directly to Storage, and the backend pulls the file *outbound* (where no limit applies) to index it.
+Vercel Functions reject request bodies over 4.5 MB at the platform edge, before any application code runs. A 20 MB document cannot reach the backend as a POST body, full stop. The upload therefore became a three-step handshake: the backend mints a Supabase Storage signed URL, the browser PUTs the bytes directly to Storage, and the backend pulls the file *outbound* (where no limit applies) to index it.
 
 This started as a platform workaround and ended up the better design regardless: bytes take one hop instead of two, the API never buffers a 20 MB body in a 2 GB-memory function, and an abandoned upload leaves a visible `pending` row rather than a half-written request. The cost is a more complex client flow and a `pending` state that has to be modelled honestly. A single-call `POST /upload` was kept for local development and curl, capped at 4 MB with an error message that points at the signed-URL route.
 
 ### `pypdf` instead of `pdfplumber`
 
-`pdfplumber` gives per-glyph coordinates and table extraction, and pulls in Pillow and pdfminer.six to do it. Handbooks are prose; the pipeline needs page-scoped text and nothing else. `pypdf` is pure Python, has no native wheels, and keeps the function bundle small. The cost is real: text extracted from multi-column layouts and tables is messier, and fee schedules in particular come out as run-on text. If handbook tables turn out to matter, the extraction layer is one module ([`pdf.py`](../backend/nichedocs/pdf.py)) behind a stable interface, so swapping it is a contained change rather than a rewrite.
+`pdfplumber` gives per-glyph coordinates and table extraction, and pulls in Pillow and pdfminer.six to do it. The target documents are prose; the pipeline needs page-scoped text and nothing else. `pypdf` is pure Python, has no native wheels, and keeps the function bundle small. The cost is real: text extracted from multi-column layouts and tables is messier, and fee schedules in particular come out as run-on text. If tables and multi-column layouts turn out to matter, the extraction layer is one module ([`pdf.py`](../backend/nichedocs/pdf.py)) behind a stable interface, so swapping it is a contained change rather than a rewrite.
 
 ## 4. What I would do next
 
 - **Hybrid retrieval.** Pure vector search is weak on exact-term queries — a student searching for "clause 7.3.1" wants lexical matching, not semantic similarity. Postgres full-text search alongside the vector index, fused by reciprocal rank, is the standard fix.
 - **An evaluation set.** Twenty real student questions with hand-labelled correct pages, run on every change. Right now "does it work?" is a judgement call; it should be a number, and specifically a number that tracks the false-confident-answer rate, not just accuracy.
-- **Background indexing.** A 500-page handbook holds the `/process` request open for minutes. A job queue with UI progress is the right answer at real scale.
+- **Background indexing.** A 500-page document holds the `/process` request open for minutes. A job queue with UI progress is the right answer at real scale.
 - **Citations that open the PDF.** Clicking "page 12" should render page 12 of the source, not just name it. It closes the verification loop the whole product is built around.
 
 ## 5. What I learned

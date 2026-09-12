@@ -15,10 +15,14 @@
   themes are defined once, here, instead of every component carrying a `dark:`
   variant beside each of its ~117 colour utilities.
 
-  Three theme states are supported:
-    - no attribute      -> follow the OS via prefers-color-scheme
-    - data-theme=light  -> forced light, even on a dark OS
-    - data-theme=dark   -> forced dark, even on a light OS
+  The toggle is a straight light/dark switch and the boot script always stamps
+  `data-theme` on <html>, so in normal operation exactly one of these applies:
+    - data-theme=light  -> light
+    - data-theme=dark   -> dark
+
+  The prefers-color-scheme block below is a fallback for the case where no
+  attribute is set at all — JS disabled, or the boot script failed. Without it
+  a dark-OS visitor would get a white page in that scenario.
 */
 @theme inline {
   --color-canvas: var(--nd-canvas);
@@ -33,6 +37,7 @@
   --color-header-line: var(--nd-header-line);
   --color-header-title: var(--nd-header-title);
   --color-header-sub: var(--nd-header-sub);
+  --color-header-btn: var(--nd-header-btn);
   --color-accent: var(--nd-accent);
   --color-accent-hover: var(--nd-accent-hover);
   --color-accent-soft: var(--nd-accent-soft);
@@ -53,25 +58,28 @@
 :root {
   color-scheme: light;
 
-  --nd-canvas: var(--color-slate-50);
+  --nd-canvas: #f7f8fc;
   --nd-surface: #ffffff;
-  --nd-surface-sunken: var(--color-slate-50);
-  --nd-line: var(--color-slate-200);
-  --nd-line-strong: var(--color-slate-300);
-  --nd-content: var(--color-slate-900);
-  --nd-content-soft: var(--color-slate-700);
-  --nd-muted: var(--color-slate-600);
+  --nd-surface-sunken: #f7f8fc;
+  --nd-line: #e6e8f0;
+  --nd-line-strong: #d6d9e6;
+  --nd-content: #12141c;
+  --nd-content-soft: #3d4252;
+  --nd-muted: #6b7185;
 
-  --nd-header: var(--color-sky-100);
-  --nd-header-line: var(--color-sky-200);
-  --nd-header-title: var(--color-sky-950);
-  --nd-header-sub: var(--color-sky-800);
+  /* The header now sits flush on the canvas rather than as a tinted bar, so
+     it borrows the canvas colour and is separated by a hairline alone. */
+  --nd-header: var(--nd-canvas);
+  --nd-header-line: #e6e8f0;
+  --nd-header-title: #12141c;
+  --nd-header-sub: #6b7185;
+  --nd-header-btn: #ffffff;
 
-  --nd-accent: var(--color-indigo-600);
-  --nd-accent-hover: var(--color-indigo-700);
-  --nd-accent-soft: var(--color-indigo-50);
-  --nd-accent-line: var(--color-indigo-200);
-  --nd-accent-text: var(--color-indigo-700);
+  --nd-accent: #6c47e6;
+  --nd-accent-hover: #5b39cc;
+  --nd-accent-soft: #efeafd;
+  --nd-accent-line: #d7cbfa;
+  --nd-accent-text: #5b39cc;
   --nd-on-accent: #ffffff;
 
   --nd-warn-soft: var(--color-amber-50);
@@ -84,7 +92,7 @@
   --nd-ok-soft: var(--color-emerald-100);
   --nd-ok-text: var(--color-emerald-700);
 
-  --nd-scroll-thumb: var(--color-slate-300);
+  --nd-scroll-thumb: #d6d9e6;
 }
 
 /*
@@ -93,68 +101,40 @@
   Accent and status colours shift to lighter steps because saturated mid-tones
   lose contrast badly on dark ground.
 */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
+/*
+  Dark.
 
-    --nd-canvas: var(--color-slate-950);
-    --nd-surface: var(--color-slate-900);
-    --nd-surface-sunken: var(--color-slate-800);
-    --nd-line: var(--color-slate-700);
-    --nd-line-strong: var(--color-slate-600);
-    --nd-content: var(--color-slate-100);
-    --nd-content-soft: var(--color-slate-300);
-    --nd-muted: var(--color-slate-400);
+  Both selectors share one declaration list. They were previously duplicated
+  blocks, which drifted the moment one was edited and the other was not.
 
-    --nd-header: var(--color-sky-950);
-    --nd-header-line: var(--color-sky-900);
-    --nd-header-title: var(--color-sky-100);
-    --nd-header-sub: var(--color-sky-300);
-
-    --nd-accent: var(--color-indigo-500);
-    --nd-accent-hover: var(--color-indigo-400);
-    --nd-accent-soft: color-mix(in oklab, var(--color-indigo-500) 18%, transparent);
-    --nd-accent-line: var(--color-indigo-700);
-    --nd-accent-text: var(--color-indigo-300);
-    --nd-on-accent: #ffffff;
-
-    --nd-warn-soft: color-mix(in oklab, var(--color-amber-500) 16%, transparent);
-    --nd-warn-line: var(--color-amber-800);
-    --nd-warn-text: var(--color-amber-300);
-
-    --nd-danger-soft: color-mix(in oklab, var(--color-rose-500) 16%, transparent);
-    --nd-danger-text: var(--color-rose-300);
-
-    --nd-ok-soft: color-mix(in oklab, var(--color-emerald-500) 20%, transparent);
-    --nd-ok-text: var(--color-emerald-300);
-
-    --nd-scroll-thumb: var(--color-slate-600);
-  }
-}
-
-/* Explicit choice wins over the OS preference, in both directions. */
+    :root[data-theme="dark"]              -> the toggle's explicit choice
+    @media + :root:not([data-theme=...])  -> fallback when no attribute is set
+                                             (JS disabled, or boot script failed)
+*/
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --nd-canvas: var(--color-slate-950);
-  --nd-surface: var(--color-slate-900);
-  --nd-surface-sunken: var(--color-slate-800);
-  --nd-line: var(--color-slate-700);
-  --nd-line-strong: var(--color-slate-600);
-  --nd-content: var(--color-slate-100);
-  --nd-content-soft: var(--color-slate-300);
-  --nd-muted: var(--color-slate-400);
+  --nd-canvas: #0a0c14;
+  --nd-surface: #0f1220;
+  --nd-surface-sunken: #151931;
+  --nd-line: #22273f;
+  --nd-line-strong: #2d3350;
+  --nd-content: #eef0f8;
+  --nd-content-soft: #c3c8db;
+  --nd-muted: #8a90a8;
 
-  --nd-header: var(--color-sky-950);
-  --nd-header-line: var(--color-sky-900);
-  --nd-header-title: var(--color-sky-100);
-  --nd-header-sub: var(--color-sky-300);
+  /* Flush with the canvas, separated by a hairline only. */
+  --nd-header: var(--nd-canvas);
+  --nd-header-line: #22273f;
+  --nd-header-title: #ffffff;
+  --nd-header-sub: #8a90a8;
+  --nd-header-btn: #151931;
 
-  --nd-accent: var(--color-indigo-500);
-  --nd-accent-hover: var(--color-indigo-400);
-  --nd-accent-soft: color-mix(in oklab, var(--color-indigo-500) 18%, transparent);
-  --nd-accent-line: var(--color-indigo-700);
-  --nd-accent-text: var(--color-indigo-300);
+  --nd-accent: #7c5cf0;
+  --nd-accent-hover: #8f74f5;
+  --nd-accent-soft: #241d4d;
+  --nd-accent-line: #3d3470;
+  --nd-accent-text: #b9a8fb;
   --nd-on-accent: #ffffff;
 
   --nd-warn-soft: color-mix(in oklab, var(--color-amber-500) 16%, transparent);
@@ -167,7 +147,48 @@
   --nd-ok-soft: color-mix(in oklab, var(--color-emerald-500) 20%, transparent);
   --nd-ok-text: var(--color-emerald-300);
 
-  --nd-scroll-thumb: var(--color-slate-600);
+  --nd-scroll-thumb: #2d3350;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+      color-scheme: dark;
+
+    --nd-canvas: #0a0c14;
+    --nd-surface: #0f1220;
+    --nd-surface-sunken: #151931;
+    --nd-line: #22273f;
+    --nd-line-strong: #2d3350;
+    --nd-content: #eef0f8;
+    --nd-content-soft: #c3c8db;
+    --nd-muted: #8a90a8;
+
+    /* Flush with the canvas, separated by a hairline only. */
+    --nd-header: var(--nd-canvas);
+    --nd-header-line: #22273f;
+    --nd-header-title: #ffffff;
+    --nd-header-sub: #8a90a8;
+    --nd-header-btn: #151931;
+
+    --nd-accent: #7c5cf0;
+    --nd-accent-hover: #8f74f5;
+    --nd-accent-soft: #241d4d;
+    --nd-accent-line: #3d3470;
+    --nd-accent-text: #b9a8fb;
+    --nd-on-accent: #ffffff;
+
+    --nd-warn-soft: color-mix(in oklab, var(--color-amber-500) 16%, transparent);
+    --nd-warn-line: var(--color-amber-800);
+    --nd-warn-text: var(--color-amber-300);
+
+    --nd-danger-soft: color-mix(in oklab, var(--color-rose-500) 16%, transparent);
+    --nd-danger-text: var(--color-rose-300);
+
+    --nd-ok-soft: color-mix(in oklab, var(--color-emerald-500) 20%, transparent);
+    --nd-ok-text: var(--color-emerald-300);
+
+    --nd-scroll-thumb: #2d3350;
+  }
 }
 
 html,

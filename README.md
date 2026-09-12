@@ -1,6 +1,6 @@
-# HandbookIQ — NicheDocs AI
+# NicheDocs AI — Grounded Document Q&A
 
-**Ask questions about a university student handbook and get answers grounded in the document, with the page and section each answer came from. When the handbook does not cover something, it says so instead of guessing.**
+**Upload a PDF, ask questions about it, and get answers grounded in that document — with the page and section each answer came from. When the document does not cover something, it says so instead of guessing.**
 
 > 🔗 **Live demo:** _add your deployed URL here_
 > 🎥 **Demo video (90s):** _add your Loom link here_
@@ -9,20 +9,36 @@
 
 ## The problem
 
-A student handbook is 80–200 pages of policy that nobody reads. Students ask the registrar the same twenty questions every semester — *what's the attendance minimum, how do I appeal a grade, when's the withdrawal deadline* — and the answers are all in a PDF they already have.
+Take a university student handbook: 80–200 pages of policy that nobody reads. Students ask the registrar the same twenty questions every semester — *what's the attendance minimum, how do I appeal a grade, when's the withdrawal deadline* — and the answers are all in a PDF they already have. The same shape recurs everywhere: employment contracts, compliance manuals, insurance policies, tenancy agreements.
 
-The obvious fix is to hand the PDF to a chatbot. The obvious fix is also where it goes wrong: a general-purpose model will confidently tell a student that the attendance requirement is 75% because that is what it is at most universities, not because it is what *this* handbook says. In a policy domain, a plausible wrong answer is worse than no answer — the student acts on it, misses a deadline, and the institution is the one holding the problem.
+The obvious fix is to hand the PDF to a chatbot. The obvious fix is also where it goes wrong: a general-purpose model will confidently tell a student the attendance requirement is 75%, because that is what it is at most universities — not because it is what *this* handbook says. In a policy domain, a plausible wrong answer is worse than no answer. The student acts on it, misses a deadline, and the institution is the one holding the problem.
 
-HandbookIQ is built around the opposite default: **answer only from the retrieved text, cite the page, or admit you don't know.**
+NicheDocs is built around the opposite default: **answer only from the retrieved text, cite the page, or admit you don't know.**
+
+That inversion is the whole engineering exercise. Making a RAG app answer the questions a document covers is straightforward; making it behave honestly on the questions it *doesn't* is the hard part, and it is what the architecture below is organised around.
 
 ## What it does
 
-- **Upload** a handbook PDF (up to 20 MB) and watch it get parsed, chunked, and indexed.
+- **Upload** any text-based PDF (up to 20 MB) and watch it get parsed, chunked, and indexed.
 - **Ask** natural-language questions in a chat UI.
 - **Read** an answer built only from passages retrieved out of that document.
 - **Verify** every answer against page-numbered, section-labelled citations, with the exact excerpt the model used.
 - **Trust the "no"** — when retrieval finds nothing relevant, or the model judges the excerpts insufficient, you get an explicit *"Not found in this document"* card, styled differently from a real answer.
-- **Switch** between multiple uploaded handbooks; each keeps its own chat history for the session.
+- **Switch** between multiple uploaded documents; each keeps its own chat history for the session.
+- **Read it in the dark** — light, dark, and system themes.
+
+### What it handles well, and what it doesn't
+
+Being specific about the limits, since "chat with any PDF" is usually oversold:
+
+| Document | Result |
+|---|---|
+| Flowing prose — handbooks, policies, contracts, FAQs, reports | Works well |
+| Multi-column layouts (most academic papers) | Poor — `pypdf` interleaves the columns |
+| Tables, figures, equations | Poor — structure is flattened into run-on text |
+| Scanned / image-only PDFs | Rejected outright with a clear message (no OCR) |
+
+Handling columns and tables properly means a layout-aware parser; that trade-off is documented in the [case study](docs/CASE_STUDY.md).
 
 ## Architecture
 
@@ -65,7 +81,7 @@ flowchart TD
     ASK -->|14. answer + page citations| UI
 ```
 
-**Why the PDF bypasses the API (steps 2–3).** Vercel Functions reject request bodies over **4.5 MB** at the platform edge, before any of our code runs. A 20 MB handbook can therefore never be POSTed to the backend. Instead the backend mints a short-lived Supabase Storage signed URL, the browser PUTs the bytes straight to Storage, and only the storage path comes back to us. The backend then pulls the file *outbound*, where no such limit applies.
+**Why the PDF bypasses the API (steps 2–3).** Vercel Functions reject request bodies over **4.5 MB** at the platform edge, before any of our code runs. A 20 MB document can therefore never be POSTed to the backend. Instead the backend mints a short-lived Supabase Storage signed URL, the browser PUTs the bytes straight to Storage, and only the storage path comes back to us. The backend then pulls the file *outbound*, where no such limit applies.
 
 ### Retrieval pipeline in detail
 
@@ -73,7 +89,7 @@ flowchart TD
 |---|---|---|
 | Extract | `pypdf` pulls text per page; hyphenated line-breaks rejoined, whitespace normalised. Scanned/image-only PDFs are rejected with a clear message rather than indexed as nothing. | [`backend/nichedocs/pdf.py`](backend/nichedocs/pdf.py) |
 | Chunk | Every word is tagged with its page number and enclosing heading, then a ~600-token window slides over the tagged stream with ~90 tokens of overlap. A chunk is cited to the page where it **starts**. | [`backend/nichedocs/chunking.py`](backend/nichedocs/chunking.py) |
-| Embed | Chunks are embedded in batches of 96 — one 600-chunk handbook costs ~7 HTTP round trips instead of 600. | [`backend/nichedocs/embeddings.py`](backend/nichedocs/embeddings.py) |
+| Embed | Chunks are embedded in batches of 96 — one 600-chunk document costs ~7 HTTP round trips instead of 600. | [`backend/nichedocs/embeddings.py`](backend/nichedocs/embeddings.py) |
 | Store | `chunks` rows carry `page_number`, `section`, `content`, and a `vector(1536)`, indexed with HNSW / cosine. | [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql) |
 | Retrieve | The question is embedded and matched against **only the selected document** via the `match_chunks` RPC, with a cosine floor of 0.20. | [`backend/nichedocs/store.py`](backend/nichedocs/store.py) |
 | Ground | Passages are numbered `[1]…[5]` with page/section labels. The model replies in JSON with `found`, `answer`, and `citations`. Citation indices outside the supplied range are discarded as hallucinations. | [`backend/nichedocs/answering.py`](backend/nichedocs/answering.py) |
@@ -83,7 +99,7 @@ flowchart TD
 Three independent gates, so no single failure produces a confident fabrication:
 
 1. **Retrieval floor.** If no chunk clears 0.20 cosine similarity, the API returns *not found* without ever calling the LLM — faster, cheaper, and structurally incapable of hallucinating.
-2. **Prompt contract.** The system prompt gives the model no fallback: it is told it has no other knowledge of the institution, and that answering "not in this document" is a correct and valuable outcome.
+2. **Prompt contract.** The system prompt gives the model no fallback: it is told to treat itself as having no prior knowledge of the document's subject or field, that what is typical elsewhere is irrelevant, and that answering "not in this document" is a correct and valuable outcome.
 3. **Citation validation.** The model returns which excerpt numbers it used. Any index outside the range we actually supplied is dropped, so a citation can never point at a passage that does not exist.
 
 ## Tech stack
@@ -191,9 +207,9 @@ Open <http://localhost:3000>.
 2. Add `NEXT_PUBLIC_API_URL=https://<backend>.vercel.app`.
 3. Deploy.
 
-**Then close the loop:** go back to Project A and set `ALLOWED_ORIGINS` to your frontend's URL (comma-separate to allow several, e.g. `https://handbookiq.vercel.app,http://localhost:3000`), and redeploy. CORS will reject the browser otherwise.
+**Then close the loop:** go back to Project A and set `ALLOWED_ORIGINS` to your frontend's URL (comma-separate to allow several, e.g. `https://nichedocs.vercel.app,http://localhost:3000`), and redeploy. CORS will reject the browser otherwise.
 
-`backend/vercel.json` already sets `maxDuration: 300` so large handbooks finish indexing within the Hobby-plan ceiling.
+`backend/vercel.json` already sets `maxDuration: 300` so large documents finish indexing within the Hobby-plan ceiling.
 
 ---
 
@@ -251,9 +267,9 @@ The full write-up is in [`docs/CASE_STUDY.md`](docs/CASE_STUDY.md). The headline
 
 ## Known limitations
 
-- **No OCR.** Scanned handbooks are rejected rather than silently indexed as empty. The error message says so explicitly.
+- **No OCR.** Scanned documents are rejected rather than silently indexed as empty. The error message says so explicitly.
 - **No auth.** Every visitor sees every uploaded document. Fine for a demo; the schema already has RLS enabled with zero policies, so adding owner-scoped policies is the natural next step rather than a rewrite.
-- **Synchronous indexing.** A very large handbook holds the `/process` request open for up to 5 minutes. A job queue is the right answer at real scale.
+- **Synchronous indexing.** A very large document holds the `/process` request open for up to 5 minutes. A job queue is the right answer at real scale.
 - **Chunks spanning pages** are cited to their starting page, which can be off by one for an answer drawn from the tail of a chunk.
 
 ## Roadmap

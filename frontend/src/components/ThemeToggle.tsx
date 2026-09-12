@@ -1,82 +1,113 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { MoonIcon, SunIcon, SystemIcon } from "./icons";
+import { useLayoutEffect, useState, useSyncExternalStore } from "react";
+import { MoonIcon, SunIcon } from "./icons";
 
-export type Theme = "light" | "dark" | "system";
+export type Theme = "light" | "dark";
 
 export const THEME_STORAGE_KEY = "nichedocs-theme";
 
-const ORDER: Theme[] = ["light", "dark", "system"];
+const ORDER: Theme[] = ["light", "dark"];
 
 const LABEL: Record<Theme, string> = {
   light: "Light",
   dark: "Dark",
-  system: "System",
 };
 
 /** Mirror the choice onto <html> so the CSS token layer can react to it. */
 function apply(theme: Theme) {
-  const root = document.documentElement;
-  if (theme === "system") {
-    // No attribute: prefers-color-scheme takes over.
-    root.removeAttribute("data-theme");
-  } else {
-    root.setAttribute("data-theme", theme);
-  }
+  document.documentElement.setAttribute("data-theme", theme);
 }
 
 function readStoredTheme(): Theme {
   // Guard for the server render, where there is no localStorage at all.
-  if (typeof window === "undefined") return "system";
+  if (typeof window === "undefined") return "light";
   try {
     const stored = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
     if (stored && ORDER.includes(stored)) return stored;
   } catch {
-    // Private mode or blocked storage — fall back to following the OS.
+    // Private mode or blocked storage — fall through to the OS preference.
   }
-  return "system";
+  // There is no longer an explicit "System" setting, but a first-time visitor
+  // should still land on whichever theme their OS is set to. After that, their
+  // toggle choice is stored and wins.
+  try {
+    if (window.matchMedia?.("(prefers-color-scheme: dark)").matches) return "dark";
+  } catch {
+    // matchMedia is unavailable in some embedded browsers.
+  }
+  return "light";
 }
 
-export function ThemeToggle() {
-  // Lazy initialiser rather than a state-setting effect: the value is known at
-  // first client render, so there is no reason to render once and correct.
-  const [theme, setTheme] = useState<Theme>(readStoredTheme);
+const BUTTON_CLASS =
+  "inline-flex items-center gap-2 rounded-full border border-line bg-header-btn px-4 py-2 text-sm font-semibold text-header-title shadow-sm transition hover:border-accent-line hover:shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-header";
 
-  useEffect(() => {
+export function ThemeToggle() {
+  // The server cannot know the visitor's stored theme, so the first client
+  // render must match the server's output exactly or React reports a hydration
+  // mismatch. `useSyncExternalStore` is built for precisely this: the third
+  // argument is the server snapshot, so React renders `false` during SSR and
+  // the first hydration pass, then `true` immediately after — no state-setting
+  // effect, and no mismatch.
+  //
+  // `suppressHydrationWarning` was the wrong tool for the button: it only
+  // covers an element's own attributes one level deep, so it silenced nothing
+  // on the title/aria-label or the swapped SVG children.
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+
+  // Only read once mounted; during SSR this returns the neutral default.
+  const [override, setOverride] = useState<Theme | null>(null);
+  const theme: Theme = override ?? (mounted ? readStoredTheme() : "light");
+
+  // Runs before paint. In development, React's Strict Mode remounts once and
+  // resets <html> to only the attributes it manages from JSX, wiping the
+  // data-theme the boot script set during parsing. Re-applying here restores
+  // it before anything is painted. A no-op in production.
+  useLayoutEffect(() => {
+    if (!mounted) return;
     apply(theme);
     try {
       localStorage.setItem(THEME_STORAGE_KEY, theme);
     } catch {
       // Not fatal: the theme still applies for this session.
     }
-  }, [theme]);
+  }, [theme, mounted]);
 
   function cycle() {
-    setTheme((current) => ORDER[(ORDER.indexOf(current) + 1) % ORDER.length]);
+    setOverride(theme === "light" ? "dark" : "light");
   }
 
-  const Icon = theme === "light" ? SunIcon : theme === "dark" ? MoonIcon : SystemIcon;
+  if (!mounted) {
+    // Same box, same classes, no theme-dependent content — so server and client
+    // agree. `aria-hidden` keeps a label-less control out of the a11y tree for
+    // the moment it exists.
+    return (
+      <span className={BUTTON_CLASS} aria-hidden>
+        <span className="h-4 w-4" />
+        <span className="hidden sm:inline">Theme</span>
+      </span>
+    );
+  }
+
+  // Show the icon for the theme you'd switch *to* — a moon while in light mode
+  // reads as "click for dark", which is the convention users expect.
+  const Icon = theme === "light" ? MoonIcon : SunIcon;
+  const next: Theme = theme === "light" ? "dark" : "light";
 
   return (
     <button
       type="button"
       onClick={cycle}
-      title={`Theme: ${LABEL[theme]} — click to change`}
-      aria-label={`Theme: ${LABEL[theme]}. Click to switch theme.`}
-      className="inline-flex items-center gap-2 rounded-lg border border-header-line bg-surface/70 px-3 py-1.5 text-xs font-semibold text-header-title shadow-sm transition hover:bg-surface hover:shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-header"
+      title={`Switch to ${LABEL[next].toLowerCase()} mode`}
+      aria-label={`Switch to ${LABEL[next].toLowerCase()} mode`}
+      className={BUTTON_CLASS}
     >
-      {/*
-        suppressHydrationWarning: the server always renders the "system" icon,
-        but the inline boot script may already have applied a stored theme by
-        the time React hydrates.
-      */}
-      <span suppressHydrationWarning>
-        <Icon className="h-4 w-4" />
-      </span>
-      <span className="hidden sm:inline" suppressHydrationWarning>
-        {LABEL[theme]}
-      </span>
+      <Icon className="h-4 w-4" />
+      <span className="hidden sm:inline">{LABEL[next]}</span>
     </button>
   );
 }

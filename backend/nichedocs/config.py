@@ -143,6 +143,15 @@ def get_settings() -> Settings:
         # ~600 round trips into ~6 for a large handbook.
         embedding_batch_size=_int("EMBEDDING_BATCH_SIZE", 96),
         top_k=_int("RETRIEVAL_TOP_K", 5),
-        min_similarity=_float("RETRIEVAL_MIN_SIMILARITY", 0.20),
+        # Off-topic guardrail. Cosine scores from text-embedding-3-small do not
+        # span 0-1 in practice: genuinely relevant passages land ~0.25-0.55,
+        # while unrelated questions land ~0.05-0.20. Measured against a real
+        # 220-page document, on-topic questions scored 0.25-0.29 and clearly
+        # off-topic ones ("how do I bake sourdough bread") scored 0.08. 0.22
+        # sits in that gap with headroom on both sides.
+        #
+        # Raising this much higher does NOT make the app stricter in a useful
+        # way — it makes it refuse everything, including good questions.
+        min_similarity=_float("RETRIEVAL_MIN_SIMILARITY", 0.22),
         allowed_origins=_csv("ALLOWED_ORIGINS", ["http://localhost:3000"]),
     )

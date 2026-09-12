@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChatPanel } from "@/components/ChatPanel";
 import { DocumentList } from "@/components/DocumentList";
 import { UploadPanel } from "@/components/UploadPanel";
-import { ExternalLinkIcon, GitHubIcon } from "@/components/icons";
+import { ExternalLinkIcon, LogoIcon } from "@/components/icons";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ApiError, ask, deleteDocument, listDocuments } from "@/lib/api";
 import type { ChatMessage, DocumentSummary, ProcessResponse } from "@/lib/types";
@@ -147,15 +147,22 @@ export default function Home() {
   );
 
   return (
-    <main className="flex h-screen flex-col bg-surface-sunken">
-      <header className="flex shrink-0 items-center justify-between border-b border-header-line bg-header px-6 py-3">
-        <div>
-          <h1 className="text-base font-bold tracking-tight text-header-title">
-            HandbookIQ
-          </h1>
-          <p className="text-xs text-header-sub">
-            Grounded answers from your student handbook — with page citations
-          </p>
+    <main className="flex h-screen flex-col bg-canvas">
+      <header className="flex shrink-0 items-center justify-between border-b border-header-line bg-header px-6 py-4">
+        <div className="flex items-center gap-3">
+          {/* Accent tile carrying the logo mark — the one saturated element in
+              the header, so it anchors the eye without a tinted bar. */}
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-on-accent shadow-sm">
+            <LogoIcon className="h-5 w-5" />
+          </span>
+          <div>
+            <h1 className="text-base font-bold tracking-tight text-header-title">
+              NicheDocs AI
+            </h1>
+            <p className="text-xs text-header-sub">
+              Answers grounded in your document, with page citations
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <ThemeToggle />
@@ -165,27 +172,22 @@ export default function Home() {
             // noopener closes the reverse-tabnabbing hole that target="_blank" opens.
             rel="noopener noreferrer"
             aria-label="View the NicheDocs AI source on GitHub (opens in a new tab)"
-            className="group inline-flex items-center gap-2 rounded-lg border border-header-line bg-surface/70 px-3 py-1.5 text-xs font-semibold text-header-title shadow-sm transition hover:border-accent hover:bg-surface hover:shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-header"
+            className="inline-flex items-center gap-2 rounded-full border border-line bg-header-btn px-4 py-2 text-sm font-semibold text-header-title shadow-sm transition hover:border-accent-line hover:shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-header"
           >
-            <GitHubIcon className="h-4 w-4" />
+            <ExternalLinkIcon className="h-4 w-4" />
             <span>View source</span>
-            <ExternalLinkIcon className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-70" />
           </a>
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1 gap-4 p-4">
-        {/*
-          Floating card rather than a flush panel: inset from the page edges,
-          rounded, and lifted with a soft shadow. The shadow replaces the old
-          right-hand border — using both reads as a double edge.
-        */}
-        <aside className="scroll-thin flex w-80 shrink-0 flex-col gap-4 overflow-y-auto rounded-2xl bg-surface p-4 shadow-lg shadow-black/10 ring-1 ring-line">
+      <div className="flex min-h-0 flex-1">
+        {/* Flush column separated by a hairline, not a floating card. */}
+        <aside className="scroll-thin flex w-80 shrink-0 flex-col gap-5 overflow-y-auto border-r border-line bg-canvas p-5">
           <UploadPanel onUploaded={handleUploaded} />
 
           <div>
-            <h2 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-muted">
-              Your handbooks
+            <h2 className="mb-2.5 px-1 text-[11px] font-semibold uppercase tracking-widest text-muted">
+              Your documents
             </h2>
 
             {listError && (

@@ -111,6 +111,47 @@ def test_rejects_a_document_over_the_page_limit():
         extract_pages(pdf, max_pages=2)
 
 
+def test_strips_null_bytes_from_extracted_text():
+    """Regression: Postgres `text` cannot store NUL.
+
+    A PDF carrying an embedded null byte previously extracted cleanly, embedded
+    fine, and then failed the chunk insert with 22P05 "unsupported Unicode
+    escape sequence" — after the embedding spend had already happened.
+    """
+    from nichedocs.pdf import _clean
+
+    cleaned = _clean("Termination\x00 requires sixty\x00 days notice.")
+    assert "\x00" not in cleaned
+    assert "Termination requires sixty days notice." in cleaned
+
+
+@pytest.mark.parametrize("control", ["\x00", "\x01", "\x07", "\x0b", "\x0c", "\x1f", "\x7f"])
+def test_strips_other_control_characters(control):
+    from nichedocs.pdf import _clean
+
+    assert control not in _clean(f"before{control}after")
+
+
+def test_keeps_newlines_and_tabs():
+    """Line structure must survive — heading detection works line by line."""
+    from nichedocs.pdf import _clean
+
+    cleaned = _clean("HEADING ONE\nBody text follows here.")
+    assert "\n" in cleaned
+    assert "HEADING ONE" in cleaned
+
+
+def test_null_bytes_do_not_reach_chunks():
+    from nichedocs.pdf import PageText, _clean
+
+    pages = [PageText(page_number=1, text=_clean("Clause\x00 one. " * 40))]
+    chunks = chunk_pages(pages, target_tokens=60, overlap_tokens=8)
+
+    assert chunks
+    assert all("\x00" not in chunk.content for chunk in chunks)
+    assert all(chunk.section is None or "\x00" not in chunk.section for chunk in chunks)
+
+
 def test_rejects_bytes_that_are_not_a_pdf():
     with pytest.raises(UnprocessableDocument):
         extract_pages(b"this is definitely not a pdf", max_pages=100)

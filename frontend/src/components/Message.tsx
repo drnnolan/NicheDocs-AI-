@@ -71,7 +71,7 @@ export function ThinkingBubble() {
       role="status"
       aria-live="polite"
     >
-      <span className="sr-only">Searching the handbook…</span>
+      <span className="sr-only">Searching the document…</span>
       {[0, 1, 2].map((index) => (
         <span
           key={index}
