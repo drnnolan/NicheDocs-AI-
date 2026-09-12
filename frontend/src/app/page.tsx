@@ -147,8 +147,8 @@ export default function Home() {
   );
 
   return (
-    <main className="flex h-screen flex-col bg-canvas">
-      <header className="flex shrink-0 items-center justify-between border-b border-header-line bg-header px-6 py-4">
+    <main className="flex h-screen flex-col gap-4 bg-canvas p-4">
+      <header className="flex shrink-0 items-center justify-between rounded-2xl border border-line bg-surface px-6 py-4 shadow-xl shadow-shadow">
         <div className="flex items-center gap-3">
           {/* Accent tile carrying the logo mark — the one saturated element in
               the header, so it anchors the eye without a tinted bar. */}
@@ -172,7 +172,7 @@ export default function Home() {
             // noopener closes the reverse-tabnabbing hole that target="_blank" opens.
             rel="noopener noreferrer"
             aria-label="View the NicheDocs AI source on GitHub (opens in a new tab)"
-            className="inline-flex items-center gap-2 rounded-full border border-line bg-header-btn px-4 py-2 text-sm font-semibold text-header-title shadow-sm transition hover:border-accent-line hover:shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-header"
+            className="inline-flex items-center gap-2 rounded-full border border-line bg-header-btn px-4 py-2 text-sm font-semibold text-header-title shadow-md shadow-shadow transition hover:border-accent-line hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-header"
           >
             <ExternalLinkIcon className="h-4 w-4" />
             <span>View source</span>
@@ -180,9 +180,9 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 flex-1 overflow-hidden rounded-2xl border border-line bg-surface shadow-xl shadow-shadow">
         {/* Flush column separated by a hairline, not a floating card. */}
-        <aside className="scroll-thin flex w-80 shrink-0 flex-col gap-5 overflow-y-auto border-r border-line bg-canvas p-5">
+        <aside className="scroll-thin flex w-80 shrink-0 flex-col gap-5 overflow-y-auto border-r border-line bg-surface-sunken p-5">
           <UploadPanel onUploaded={handleUploaded} />
 
           <div>

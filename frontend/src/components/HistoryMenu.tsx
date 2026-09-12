@@ -67,7 +67,7 @@ export function HistoryMenu({ messages, onPick, disabled = false }: Props) {
             ? "No questions asked yet for this document"
             : `${count} previous question${count === 1 ? "" : "s"}`
         }
-        className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-4 py-2 text-sm font-semibold text-content-soft shadow-sm transition hover:border-accent-line hover:text-accent-text hover:shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-line disabled:hover:text-content-soft disabled:hover:shadow-sm"
+        className="inline-flex items-center gap-2 rounded-full border border-chip-line bg-chip px-4 py-2 text-sm font-semibold text-content shadow-md shadow-shadow transition hover:border-accent-line hover:text-accent-text hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-chip-line disabled:hover:text-content disabled:hover:shadow-md"
       >
         <HistoryIcon className="h-4 w-4" />
         <span>History</span>
@@ -84,9 +84,9 @@ export function HistoryMenu({ messages, onPick, disabled = false }: Props) {
           tabIndex={-1}
           role="dialog"
           aria-label="Previous questions"
-          className="absolute right-0 z-30 mt-2 w-[min(22rem,calc(100vw-3rem))] overflow-hidden rounded-2xl border border-line bg-surface shadow-xl shadow-black/10 focus:outline-none"
+          className="absolute right-0 z-30 mt-2 w-[min(22rem,calc(100vw-3rem))] overflow-hidden rounded-2xl border border-chip-line bg-chip shadow-2xl shadow-shadow-strong focus:outline-none"
         >
-          <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
+          <div className="flex items-center justify-between border-b border-chip-line px-4 py-2.5">
             <p className="text-xs font-bold uppercase tracking-widest text-muted">
               Previous questions
             </p>
@@ -119,7 +119,7 @@ export function HistoryMenu({ messages, onPick, disabled = false }: Props) {
             ))}
           </ul>
 
-          <p className="border-t border-line px-4 py-2 text-[11px] text-muted">
+          <p className="border-t border-chip-line px-4 py-2 text-[11px] text-muted">
             Click a question to ask it again
           </p>
         </div>

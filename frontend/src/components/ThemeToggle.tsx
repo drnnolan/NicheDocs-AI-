@@ -40,7 +40,7 @@ function readStoredTheme(): Theme {
 }
 
 const BUTTON_CLASS =
-  "inline-flex items-center gap-2 rounded-full border border-line bg-header-btn px-4 py-2 text-sm font-semibold text-header-title shadow-sm transition hover:border-accent-line hover:shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-header";
+  "inline-flex items-center gap-2 rounded-full border border-line bg-header-btn px-4 py-2 text-sm font-semibold text-header-title shadow-md shadow-shadow transition hover:border-accent-line hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-header";
 
 export function ThemeToggle() {
   // The server cannot know the visitor's stored theme, so the first client

@@ -38,6 +38,10 @@
   --color-header-title: var(--nd-header-title);
   --color-header-sub: var(--nd-header-sub);
   --color-header-btn: var(--nd-header-btn);
+  --color-chip: var(--nd-chip);
+  --color-chip-line: var(--nd-chip-line);
+  --color-shadow: var(--nd-shadow);
+  --color-shadow-strong: var(--nd-shadow-strong);
   --color-accent: var(--nd-accent);
   --color-accent-hover: var(--nd-accent-hover);
   --color-accent-soft: var(--nd-accent-soft);
@@ -67,13 +71,22 @@
   --nd-content-soft: #3d4252;
   --nd-muted: #6b7185;
 
-  /* The header now sits flush on the canvas rather than as a tinted bar, so
-     it borrows the canvas colour and is separated by a hairline alone. */
-  --nd-header: var(--nd-canvas);
+  /* The header is a floating card on the canvas, so it takes the surface
+     colour and its buttons take the chip colour, like every other pill. */
+  --nd-header: var(--nd-surface);
   --nd-header-line: #e6e8f0;
   --nd-header-title: #12141c;
   --nd-header-sub: #6b7185;
-  --nd-header-btn: #ffffff;
+  --nd-header-btn: var(--nd-chip);
+  /* Card shadows. Tailwind's defaults are black at low alpha, which all but
+     disappears on a dark ground — so each theme gets its own strength. */
+  --nd-shadow: rgb(18 20 28 / 0.08);
+  --nd-shadow-strong: rgb(18 20 28 / 0.14);
+  /* Pills that sit *on* a surface (History, starter chips). In dark mode
+     bg-surface on a bg-surface header is invisible, so these are one step
+     lighter than the surface behind them rather than equal to it. */
+  --nd-chip: #ffffff;
+  --nd-chip-line: #d6d9e6;
 
   --nd-accent: #6c47e6;
   --nd-accent-hover: #5b39cc;
@@ -100,9 +113,6 @@
   floating cards, and #000 leaves the shadows with nothing to read against.
   Accent and status colours shift to lighter steps because saturated mid-tones
   lose contrast badly on dark ground.
-*/
-/*
-  Dark.
 
   Both selectors share one declaration list. They were previously duplicated
   blocks, which drifted the moment one was edited and the other was not.
@@ -123,12 +133,16 @@
   --nd-content-soft: #c3c8db;
   --nd-muted: #8a90a8;
 
-  /* Flush with the canvas, separated by a hairline only. */
-  --nd-header: var(--nd-canvas);
+  /* Floating card on the canvas. */
+  --nd-header: var(--nd-surface);
   --nd-header-line: #22273f;
   --nd-header-title: #ffffff;
   --nd-header-sub: #8a90a8;
-  --nd-header-btn: #151931;
+  --nd-header-btn: var(--nd-chip);
+  --nd-shadow: rgb(0 0 0 / 0.45);
+  --nd-shadow-strong: rgb(0 0 0 / 0.6);
+  --nd-chip: #1b2039;
+  --nd-chip-line: #333a5c;
 
   --nd-accent: #7c5cf0;
   --nd-accent-hover: #8f74f5;
@@ -152,7 +166,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]):not([data-theme="dark"]) {
-      color-scheme: dark;
+    color-scheme: dark;
 
     --nd-canvas: #0a0c14;
     --nd-surface: #0f1220;
@@ -163,12 +177,16 @@
     --nd-content-soft: #c3c8db;
     --nd-muted: #8a90a8;
 
-    /* Flush with the canvas, separated by a hairline only. */
-    --nd-header: var(--nd-canvas);
+    /* Floating card on the canvas. */
+    --nd-header: var(--nd-surface);
     --nd-header-line: #22273f;
     --nd-header-title: #ffffff;
     --nd-header-sub: #8a90a8;
-    --nd-header-btn: #151931;
+    --nd-header-btn: var(--nd-chip);
+    --nd-shadow: rgb(0 0 0 / 0.45);
+    --nd-shadow-strong: rgb(0 0 0 / 0.6);
+    --nd-chip: #1b2039;
+    --nd-chip-line: #333a5c;
 
     --nd-accent: #7c5cf0;
     --nd-accent-hover: #8f74f5;

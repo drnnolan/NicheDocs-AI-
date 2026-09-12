@@ -7,13 +7,9 @@ import { Message, ThinkingBubble } from "./Message";
 import { ArrowRightIcon } from "./icons";
 
 /*
-  Document-agnostic starters. These have to be useful whether the upload is a
-  student handbook, an employment contract, or a compliance FAQ, so they ask
-  about a document's *shape* — scope, obligations, deadlines, definitions —
-  rather than any particular subject matter.
-
-  The last one is deliberately unanswerable-ish: it invites the "not found in
-  this document" path, which is the behaviour worth showing off.
+  Document-agnostic starters. These have to work whether the upload is a
+  handbook, a contract, a report, or a book, so they ask about a document's
+  *shape* — subject, argument, takeaways — rather than any particular domain.
 */
 const EXAMPLE_QUESTIONS = [
   "What is this document about?",
@@ -96,7 +92,7 @@ export function ChatPanel({ document, messages, pending, onAsk }: Props) {
                   type="button"
                   onClick={() => submit(question)}
                   disabled={pending}
-                  className="rounded-full border border-line bg-surface px-5 py-2.5 text-sm text-content-soft shadow-sm transition hover:border-accent-line hover:bg-accent-soft hover:text-accent-text hover:shadow disabled:opacity-50"
+                  className="rounded-full border border-chip-line bg-chip px-5 py-2.5 text-sm text-content-soft shadow-md shadow-shadow transition hover:border-accent-line hover:bg-accent-soft hover:text-accent-text hover:shadow-lg disabled:opacity-50"
                 >
                   {question}
                 </button>
@@ -129,7 +125,7 @@ export function ChatPanel({ document, messages, pending, onAsk }: Props) {
           ring onto the wrapper so the whole capsule lights up as a single
           control — the textarea itself has no border of its own.
         */}
-        <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-[28px] border border-line bg-surface py-2 pl-6 pr-2 shadow-lg shadow-black/5 transition focus-within:border-accent-line focus-within:shadow-xl">
+        <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-[28px] border border-chip-line bg-chip py-2 pl-6 pr-2 shadow-xl shadow-shadow transition focus-within:border-accent-line focus-within:shadow-xl">
           <textarea
             id="question"
             value={draft}
@@ -150,7 +146,7 @@ export function ChatPanel({ document, messages, pending, onAsk }: Props) {
             type="submit"
             disabled={pending || !ready || !draft.trim()}
             aria-label="Send question"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent shadow-sm transition hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent shadow-md shadow-shadow transition hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-40"
           >
             <ArrowRightIcon className="h-5 w-5" />
           </button>
